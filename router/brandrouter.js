@@ -5,9 +5,9 @@ const { addbrand,  updatebrand, deletebrand, getbrand, getallbrand } = require("
 const router = express.Router();
 
 
-router.post("/creebrand",addbrand);
-router.put("/updatebrand/:id", updatebrand);
-router.delete("/deletebrand/:id",deletebrand);
+router.post("/creebrand",authMiddleware,isAdmin,addbrand);
+router.put("/updatebrand/:id",authMiddleware,isAdmin, updatebrand);
+router.delete("/deletebrand/:id",authMiddleware,isAdmin,deletebrand);
 router.get("/getbrand/:id",getbrand);
 router.get("/getallbrand",getallbrand);
 

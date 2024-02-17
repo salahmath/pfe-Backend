@@ -1,11 +1,17 @@
 const { generatetoken } = require("../config/jwtconfig");
 const user = require("../models/usermodel");
+const Product = require("../models/Productmodel");
+const Cart = require("../models/cart");
 const asynchandeler = require("express-async-handler");
 const validation = require("../utils/validationMongodb");
 const { Refreshtoken } = require("../config/tokenrefresh");
 const jwt = require("jsonwebtoken");
-const sendEmail =require("../controller/emailcontrol")
-const crypto = require('crypto')
+const sendEmail = require("../controller/emailcontrol");
+const crypto = require("crypto");
+const Coupon = require("../models/couponmodel");
+const { trusted } = require("mongoose");
+const uniqid = require('uniqid')
+const Order = require("../models/ordermodel")
 //cree un utilisateur
 const Createuser = asynchandeler(async (req, res) => {
   const email = req.body.email;
@@ -49,7 +55,40 @@ const Getuser = asynchandeler(async (req, res) => {
     throw new Error("le utilisateur ne pas inscrit ");
   }
 });
+// login admni
 
+const Getadmin = asynchandeler(async (req, res) => {
+  const { email, password } = req.body;
+  const findAdmin = await user.findOne({ email });
+  if (findAdmin.role !== "admin")
+    throw new Error("ne pas authoriser seulment pour les admins");
+  if (findAdmin && (await findAdmin.isPasswordMatched(password))) {
+    const refreshtoken = await Refreshtoken(findAdmin?._id);
+    const updateuser = await user.findByIdAndUpdate(
+      findAdmin.id,
+      {
+        refrechToken: refreshtoken,
+      },
+      {
+        new: true,
+      }
+    );
+    res.cookie("refrechToken", refreshtoken, {
+      httpOnly: true,
+      maxAge: 72 * 60 * 60 * 1000,
+    });
+    res.json({
+      _id: findAdmin?._id,
+      email: findAdmin?.email,
+      mobile: findAdmin?.mobile,
+      lastname: findAdmin?.lastname,
+      Secondname: findAdmin?.Secondname,
+      token: generatetoken(findAdmin?._id),
+    });
+  } else {
+    throw new Error("le utilisateur ne pas inscrit ");
+  }
+});
 //chercher tout les utilisateur
 const Getalluser = asynchandeler(async (req, res) => {
   const allUsers = await user.find();
@@ -197,22 +236,213 @@ const forgotPassword = asynchandeler(async (req, res) => {
   }
 });
 //reset le mot de passe
-const rsetpassword = asynchandeler(async (req,res)=>{
-
-  const {password} = req.body;
-  const {token}=req.params;
-  const hashedToken = crypto . createHash("sha256").update(token).digest("hex");
+const rsetpassword = asynchandeler(async (req, res) => {
+  const { password } = req.body;
+  const { token } = req.params;
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
   const auser = await user.findOne({
-    passwordResetToken : hashedToken,
-    passwordRessetExpires : {$gt : Date.now()},
-  })
-  if(!auser) throw new Error ("token expired");
+    passwordResetToken: hashedToken,
+    passwordRessetExpires: { $gt: Date.now() },
+  });
+  if (!auser) throw new Error("token expired");
   auser.password = password;
   auser.passwordResetToken = undefined;
-  auser.passwordRessetExpires=undefined;
+  auser.passwordRessetExpires = undefined;
   await auser.save();
   res.json(auser);
+});
+
+//get wishlist
+const getwishlist = asynchandeler(async (req, res) => {
+  const { id } = req.user;
+  try {
+    const find = await user.findById(id).populate("wishlist");
+    res.json(find);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+//ajouter adress ou modifier
+const creeadres = asynchandeler(async (req, res) => {
+  const { id } = req.user;
+  try {
+    const cree = await user.findByIdAndUpdate(
+      id,
+      { address: req?.body?.adress },
+      { new: true }
+    );
+    res.json(cree);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const UserCart = asynchandeler(async (req, res) => {
+  const { cart } = req.body;
+  const { id } = req.user;
+  validation(id);
+  try {
+    let products = [];
+    const auser = await user.findById(id);
+    const alreadycartzs = await Cart.findOne({ orderby: auser.id });
+    if (alreadycartzs) {
+      alreadycartzs.remove();
+    }
+    for (let i = 0; i < cart.length; i++) {
+      let object = {};
+      object.product = cart[i].id;
+      object.count = cart[i].count;
+      object.color = cart[i].color;
+      let getprice = await Product.findById(cart[i].id).select("price").exec();
+      object.price = getprice.price;
+      products.push(object);
+    }
+    let cartTotal = 0;
+    for (let i = 0; i < products.length; i++) {
+      cartTotal = cartTotal + products[i].price * products[i].count;
+    }
+    let newcart = await new Cart({
+      products,
+      cartTotal,
+      orderby: auser?.id,
+    }).save();
+    res.json(newcart);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+// get  cart
+const getusercart = asynchandeler(async (req, res) => {
+  const { id } = req.user;
+  try {
+    const cart = await Cart.findOne({ orderby: id }).populate(
+      "products.product"
+    );
+    res.json(cart);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+//delete cart
+const deletcart = asynchandeler(async (req, res) => {
+  const { id } = req.user;
+  try {
+    const user = await Cart.findOne({ id });
+    const cart = await Cart.findOneAndDelete({ orderby: id });
+    res.json(cart);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const applycoupon =asynchandeler( async (req, res) => {
+  const { coupon } = req.body;
+  const { _id } = req.user;
+  try {
+    const ecoupon = await Coupon.findOne({ name: coupon });
+    if (ecoupon === null) {
+      throw new Error("This coupon is not valid");
+    }
+    const auser = await user.findOne({ _id }); // Corrected to await User.findOne({ _id })
+    let { products, cartTotal } = await Cart.findOne({
+      orderby : user._id,
+    }).populate(
+      "products.product");
+    let totalAfterDiscount = (
+      cartTotal - (cartTotal * ecoupon.discount) / 100
+    ).toFixed(2);
+    await Cart.findOneAndUpdate(
+      {orderby: user._id}, 
+      { totalAfterDiscount },
+      { new: true } // Corrected to use { new: true }
+    );
+    res.json(totalAfterDiscount);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+}
+)
+const createOrder = async (req, res) => {
+  const { COD, couponApplied } = req.body;
+  const { id } = req.user;
+  try {
+    if (!COD) throw new Error("create cash order failed");
+    
+    const auser = await user.findById(id); // Utilisation de findById pour trouver l'utilisateur par ID
+
+    let usercart = await Cart.findOne({ orderby: auser.id });
+    let finalamount = 0;
+    if (couponApplied && usercart.totalAfterDiscount) {
+      finalamount = usercart.totalAfterDiscount;
+    } else {
+      finalamount = usercart.cartTotal;
+    }
+    
+    let neworder = await new Order({
+      products: usercart.products,
+      paimentIntent: { 
+        id: uniqid(),
+        method: "COD",
+        amount: finalamount,
+        status: "cash on delevery",
+        created: new Date(),
+      },
+      orderby: auser.id,
+      orderStatus: "cash on delevery",
+    }).save();
+
+    let update = usercart.products.map((item) => {
+      return {
+        updateOne: {
+          filter: { id: item.product.id },
+          update: { $inc: { quantity: -item.count, sold: +item.count } }
+        }
+      };
+    });
+
+    const updated = await Product.bulkWrite(update, {});
+    res.json({ message: "success" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "An error occurred" });
+  }
+};
+
+const getOrder = asynchandeler(async(req,res)=>{
+  const {id} = req.user;
+  try{
+  const find = await Order.findOne({orderby: id}).populate('products.product').exec();
+  res.json(find)
+  }catch(error){
+    throw new Error(error)
+  }
 })
+
+
+const updateOrderStatus = async (req, res) => {
+  const { status } = req.body;
+  const { id } = req.params;
+
+  try {
+    validation(id);
+
+    const findOrder = await Order.findByIdAndUpdate(
+      id,
+      { orderStatus: status,
+        paimentIntent:{
+          status : status
+        } },
+      { new: true }
+    );
+
+    res.json(findOrder);
+  } catch (error) {
+    throw new Error(error)
+   
+  }
+};
 
 module.exports = {
   rsetpassword,
@@ -226,4 +456,14 @@ module.exports = {
   logout,
   Updatepassword,
   forgotPassword,
+  Getadmin,
+  getwishlist,
+  creeadres,
+  UserCart,
+  deletcart,
+  getusercart,
+  applycoupon,
+  createOrder,
+  getOrder,
+  updateOrderStatus
 };

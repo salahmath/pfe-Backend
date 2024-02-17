@@ -41,7 +41,9 @@ var userSchema = new mongoose.Schema({
         type : Array,
         default:[]
     },
-    address: [{type:mongoose.Schema.Types.ObjectId  , ref:"Adress"}],
+    address:{
+        type : String
+    },
     wishlist: [{type: mongoose.Schema.Types.ObjectId  , ref:"Product"}],
     refrechToken:{
         type : String,
