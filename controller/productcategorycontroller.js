@@ -6,7 +6,7 @@ const asynchandeler = require('express-async-handler')
 const addcategory = asynchandeler(async(req,res)=>{
     try {
         const id = req.body;
-        const adcategory = await Category.create(id)
+        const adcategory = (await Category.create(id))
         res.json(adcategory)
     }
     catch (error){

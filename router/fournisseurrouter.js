@@ -8,7 +8,7 @@ const router = express.Router();
 router.post("/addfournisseur",authMiddleware,isAdmin,addfournisseur)
 router.put("/updatefournisseur/:id",authMiddleware,isAdmin, updatefournisseur)
 router.get("/getfournisseur/:id",authMiddleware,isAdmin,getfournisseur)
-router.get("/getallfournisseur",authMiddleware,isAdmin,getallfournisseur)
+router.get("/getallfournisseur",getallfournisseur)
 router.delete("/deletefournisseur/:id",authMiddleware,isAdmin,deletefournisseur)
 
 

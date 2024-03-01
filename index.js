@@ -14,11 +14,12 @@ const brand = require("./router/brandrouter");
 const coup = require("./router/coupenrouter");
 const { notfound, errorhandel } = require("./middelware/errorhandel");
 const color = require("./router/colorrouter");
+const eqr = require("./router/enquiryrouter");
 db();
 const cookieparser = require("cookie-parser");
 const four = require("./router/fournisseurrouter");
-
-
+const cors = require('cors');
+app.use(cors());
 app.use(morgan("dev"));
 app.use(cookieparser());
 app.use(bodyparser.json());
@@ -27,6 +28,7 @@ app.use("/api/user", auth);
 app.use("/api/fournisseur", four);
 app.use("/api/coupon", coup);
 app.use("/api/blogcategory", catblog);
+app.use("/api/eqr",eqr );
 app.use("/api/brand", brand);
 app.use("/api/category", cat);
 app.use("/api/product", product);

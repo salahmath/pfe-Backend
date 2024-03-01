@@ -5,7 +5,7 @@ const { addcategoryblog, updatecaategoryblog, deletecategoryblog, getcategoryblo
 const router = express.Router();
 
 
-router.post("/creecategory",addcategoryblog);
+router.post("/creecategory",authMiddleware,isAdmin,addcategoryblog);
 router.put("/updatecategory/:id",updatecaategoryblog);
 router.delete("/deletecategory/:id",deletecategoryblog);
 router.get("/getcategory/:id",getcategoryblog);

@@ -1,7 +1,7 @@
 const mongoose = require('mongoose'); // Erase if already required
 
 // Declare the Schema of the Mongo model
-var userSchema = new mongoose.Schema({
+var enqSchema = new mongoose.Schema({
     name:{
         type:String,
         required:true,
@@ -22,7 +22,12 @@ var userSchema = new mongoose.Schema({
         type:String,
         required:true,
     },
-});
+    status :{
+        type: String,
+        default : "en attente",
+        enum :['en attente', "voir","repondre"]
+    }
+},{new : true});
 
 //Export the model
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model('Enq', enqSchema);

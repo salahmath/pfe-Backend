@@ -413,14 +413,22 @@ const createOrder = async (req, res) => {
 const getOrder = asynchandeler(async(req,res)=>{
   const {id} = req.user;
   try{
-  const find = await Order.findOne({orderby: id}).populate('products.product').exec();
+  const find = await Order.findOne({orderby: id}).populate('products.product').populate("orderby").exec();
   res.json(find)
   }catch(error){
     throw new Error(error)
   }
 })
 
-
+const getallOrder = asynchandeler(async(req,res)=>{
+ 
+  try{
+  const find = await Order.find().populate('products.product').populate("orderby").exec();
+  res.json(find)
+  }catch(error){
+    throw new Error(error)
+  }
+})
 const updateOrderStatus = async (req, res) => {
   const { status } = req.body;
   const { id } = req.params;
@@ -465,5 +473,6 @@ module.exports = {
   applycoupon,
   createOrder,
   getOrder,
-  updateOrderStatus
+  updateOrderStatus,
+  getallOrder
 };

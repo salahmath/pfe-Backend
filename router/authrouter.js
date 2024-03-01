@@ -1,6 +1,6 @@
 
 const express = require("express");
-const { Createuser, Updatepassword,Getuser,Getalluser,deleteauser,updateauser, getauser, handlrrefreshtoken, logout, forgotPassword, rsetpassword, Getadmin, getwishlist, creeadres, UserCart, getusercart, deletcart, applycoupon, createOrder, getOrder, updateOrderStatus } = require("../controller/usercontrol");
+const { Createuser, Updatepassword,Getuser,Getalluser,deleteauser,updateauser, getauser, handlrrefreshtoken, logout, forgotPassword, rsetpassword, Getadmin, getwishlist, creeadres, UserCart, getusercart, deletcart, applycoupon, createOrder, getOrder, updateOrderStatus, getallOrder } = require("../controller/usercontrol");
 const {authMiddleware, isAdmin, blockuser, unblockuser}= require("../middelware/authentificationmidell");
 
 
@@ -15,7 +15,7 @@ router.put('/reset-password/:token',rsetpassword)
 router.post("/forgot-password-token",forgotPassword);
 router.get("/getalluser",Getalluser);
 router.get("/logout",logout);
-router.get("/loginadmin",Getadmin);
+router.post("/loginadmin",Getadmin);
 router.get("/getwishlist",authMiddleware,getwishlist);
 router.get("/refreshToken",handlrrefreshtoken);
 router.get("/getauser/:id", authMiddleware, isAdmin, getauser);
@@ -30,6 +30,7 @@ router.get("/getusercart",authMiddleware,getusercart);
 router.delete("/deleteusercart",authMiddleware,deletcart);
 router.post("/cart/createorder",authMiddleware,createOrder);
 router.get("/getOrder",authMiddleware,getOrder)
+router.get("/getallOrder",authMiddleware,isAdmin, getallOrder)
 router.put("/updateorder/:id",authMiddleware,isAdmin,updateOrderStatus)
 
 

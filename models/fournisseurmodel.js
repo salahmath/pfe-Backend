@@ -26,10 +26,12 @@ var fournisseurSchema = new mongoose.Schema({
     },
     role:{
         type:String,
-        default:"utilisateur",
+        default:"fournissseur",
     },
     
-    address: [{type:mongoose.Schema.Types.ObjectId  , ref:"Adress"}],
+    address: {
+        type:String,
+    }, 
     
     
 

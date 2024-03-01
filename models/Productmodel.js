@@ -8,7 +8,7 @@ var ProductSchema = new mongoose.Schema({
     },
     slug:{
         type:String,
-        required:true,
+        
         unique:true,
         lowercase : true,
     },
@@ -23,8 +23,7 @@ var ProductSchema = new mongoose.Schema({
        
     },
     category:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref : "Category"
+        type:String
     },
     brand:{
     type : String,
@@ -38,9 +37,13 @@ var ProductSchema = new mongoose.Schema({
         type : Number,
         default:0
     },
-    images:[],
+    images:[{
+        public_id:String,
+        url:String
+
+    }],
     color:[],
-    tags:[],
+    tags:{type : String},
     rating:[{
         star: Number,
         comment: String,
@@ -50,7 +53,11 @@ var ProductSchema = new mongoose.Schema({
     totalrating:{
         type:String,
         default : 0,
-    }
+    },
+    fournisseur:
+        {type:mongoose.Schema.Types.ObjectId,
+            ref : "Fournisseur" 
+    },
 },
 {
     timestamps : true,

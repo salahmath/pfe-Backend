@@ -8,6 +8,6 @@ router.post("/creecategory",authMiddleware,isAdmin,addcategory);
 router.put("/updatecategory/:id",authMiddleware,isAdmin,updatecaategory);
 router.delete("/deletecategory/:id",authMiddleware,isAdmin,deletecategory);
 router.get("/getcategory/:id",authMiddleware,isAdmin,getcategory);
-router.get("/getallcategory",authMiddleware,isAdmin,getallcategory);
+router.get("/getallcategory",getallcategory);
 
 module.exports = router;
