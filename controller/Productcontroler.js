@@ -9,8 +9,15 @@ const validation = require("../utils/validationMongodb");
 const creatProduct = asynchandeler(async (req, res) => {
   try {
     if (req.body.title) req.body.slug = slugify(req.body.title);
+    if (req.body.quantite < 1) {
+      throw new Error("La quantité ne peut pas être inférieure à 0");
+    }
 
+    if (req.body.price < 0.1) {
+      throw new Error("Le prix ne peut pas être inférieure à 0");
+    }
     const CreateProduct = await Product.create(req.body);
+    
     res.json(CreateProduct);
   } catch (error) {
     throw new Error("product na pas cree");
@@ -78,12 +85,8 @@ const Updateproduct = asynchandeler(async (req, res) => {
   try {
     const update = await Product.findByIdAndUpdate(
       id,
-
       {
-        title: req?.body?.title,
-        description: req?.body?.description,
-        price: req?.body?.price,
-        quantite: req?.body?.quantite,
+        ...req.body,
         slug: slugify(req.body.title),
       },
       {

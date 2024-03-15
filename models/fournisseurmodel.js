@@ -5,13 +5,11 @@ var fournisseurSchema = new mongoose.Schema({
     lastname:{
         type:String,
         required:true,
-        unique:true,
         index:true,
     },
     Secondname:{
         type:String,
         required:true,
-        unique:true,
         index:true,
     },
     email:{
@@ -19,11 +17,20 @@ var fournisseurSchema = new mongoose.Schema({
         required:true,
         unique:true,
     },
-    mobile:{
-        type:String,
-        required:true,
-        unique:true,
+    mobile: {
+        type: Number,
+        required: true,
+        unique: true,
+        validate: {
+            validator: function(value) {
+                // Vérifie si la valeur de mobile a au moins 8 chiffres
+                return value.toString().length >= 8;
+            },
+            message: props => `Le numéro de mobile doit avoir au moins 8 chiffres.`
+        }
     },
+    
+    
     role:{
         type:String,
         default:"fournissseur",

@@ -429,6 +429,23 @@ const getallOrder = asynchandeler(async(req,res)=>{
     throw new Error(error)
   }
 })
+
+const getorderbyuser = async (req, res) => {
+  const { id } = req.params;
+  validation(id)
+  try {
+    const orderbyuser = await Order.findOne({ orderby: id })
+      .populate('products.product')
+      .populate('orderby')
+      .exec();
+    res.json(orderbyuser);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Une erreur est survenue lors de la récupération des commandes.' });
+  }
+};
+
+
 const updateOrderStatus = async (req, res) => {
   const { status } = req.body;
   const { id } = req.params;
@@ -474,5 +491,6 @@ module.exports = {
   createOrder,
   getOrder,
   updateOrderStatus,
-  getallOrder
+  getallOrder,
+  getorderbyuser
 };

@@ -18,7 +18,7 @@ throw new Error(error);
 const updatecoupon = asynchandeler(async(req,res)=>{
     try{
     const {id} = req.params;
-    const cree = await Coupon.findByIdAndUpdate(id,req.aborted,{new:true});
+    const cree = await Coupon.findByIdAndUpdate(id,req.body,{new:true});
     res.json(cree)
     
     }catch(error){

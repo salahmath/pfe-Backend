@@ -16,4 +16,5 @@ router.put('/rate',authMiddleware,rating);
   router.put("/upload",authMiddleware,isAdmin,uploadphoto.array('images',10),productImgResize, uploadImages)
 
   
+  
 module.exports = router;
