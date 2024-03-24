@@ -29,7 +29,7 @@ const getAproduct = asynchandeler(async (req, res) => {
   const { id } = req.params;
   validation(id);
   try {
-    const getproduct = await Product.findById(id);
+    const getproduct = await Product.findById(id).populate("color");
     res.json(getproduct);
   } catch (error) {
     throw new Error(error);

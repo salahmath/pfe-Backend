@@ -5,7 +5,7 @@ const { addenq, updateenq, deleteenq, getenq, getallenq } = require("../controll
 const router = express.Router();
 
 
-router.post("/creeenq",authMiddleware, isAdmin , addenq);
+router.post("/creeenq",authMiddleware, addenq);
 router.put("/updateenq/:id",authMiddleware, isAdmin , updateenq);
 router.delete("/deleteenq/:id",authMiddleware, isAdmin ,deleteenq);
 router.get("/getenq/:id",getenq);

@@ -263,6 +263,7 @@ const getwishlist = asynchandeler(async (req, res) => {
   }
 });
 
+
 //ajouter adress ou modifier
 const creeadres = asynchandeler(async (req, res) => {
   const { id } = req.user;
@@ -279,33 +280,16 @@ const creeadres = asynchandeler(async (req, res) => {
 });
 
 const UserCart = asynchandeler(async (req, res) => {
-  const { cart } = req.body;
+  const { productId ,color ,quantite,price } = req.body;
   const { id } = req.user;
   validation(id);
   try {
-    let products = [];
-    const auser = await user.findById(id);
-    const alreadycartzs = await Cart.findOne({ orderby: auser.id });
-    if (alreadycartzs) {
-      alreadycartzs.remove();
-    }
-    for (let i = 0; i < cart.length; i++) {
-      let object = {};
-      object.product = cart[i].id;
-      object.count = cart[i].count;
-      object.color = cart[i].color;
-      let getprice = await Product.findById(cart[i].id).select("price").exec();
-      object.price = getprice.price;
-      products.push(object);
-    }
-    let cartTotal = 0;
-    for (let i = 0; i < products.length; i++) {
-      cartTotal = cartTotal + products[i].price * products[i].count;
-    }
     let newcart = await new Cart({
-      products,
-      cartTotal,
-      orderby: auser?.id,
+      UserId : id,
+      color ,
+      quantite,
+      price,
+      productId
     }).save();
     res.json(newcart);
   } catch (error) {
