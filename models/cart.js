@@ -2,28 +2,28 @@ const mongoose = require('mongoose'); // Erase if already required
 
 // Declare the Schema of the Mongo model
 var cartSchema = new mongoose.Schema({
-    
+  UserId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
       productId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Product",
       },
-       UserId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
+      
       quantite:{
         type: Number,
        required: true,
       },
-      color :[],
+      color :[ {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Color",
+      }],
       price : {
         type: Number,
         required: true,
       },
-    
-    
-   cartTotal :{},
-    totalAfterDiscount: Number,
+    totalCartPrice: []
   },{
       timestamps: true
   });

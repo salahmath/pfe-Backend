@@ -1,6 +1,8 @@
 const { generatetoken } = require("../config/jwtconfig");
 const user = require("../models/usermodel");
 const Product = require("../models/Productmodel");
+const axios = require('axios');
+
 const Cart = require("../models/cart");
 const asynchandeler = require("express-async-handler");
 const validation = require("../utils/validationMongodb");
@@ -13,6 +15,7 @@ const { trusted } = require("mongoose");
 const uniqid = require('uniqid')
 const Order = require("../models/ordermodel")
 //cree un utilisateur
+
 const Createuser = asynchandeler(async (req, res) => {
   const email = req.body.email;
   const finduser = await user.findOne({ email: email });
@@ -102,7 +105,7 @@ const Getalluser = asynchandeler(async (req, res) => {
 
 //cherer un utilsateur
 const getauser = asynchandeler(async (req, res) => {
-  const { id } = req.params;
+  const { id } = req.user;
   validation(id); // Accès à la propriété 'id' de req.params
   const aUser = await user.findById(id);
   try {
@@ -127,7 +130,7 @@ const deleteauser = asynchandeler(async (req, res) => {
 
 //mise a jour un utilisateur
 const updateauser = asynchandeler(async (req, res) => {
-  const { id } = req.params;
+  const { id } = req.user;
   validation(id);
   const updateUser = await user.findByIdAndUpdate(
     id,
@@ -220,7 +223,7 @@ const forgotPassword = asynchandeler(async (req, res) => {
     const token = await auser.createPasswordResetToken();
     await auser.save();
     // Construire l'URL de réinitialisation de mot de passe avec le jeton
-    const resetUrl = `follow this link <a href="http://localhost:5000/api/user/reset-password/${token}">link<a/>`;
+    const resetUrl = `follow this link <a href="http://localhost:3000/reset-password/${token}">Cliquer ici<a/>`;
     // Données de l'email
     const data = {
       to: email,
@@ -300,25 +303,67 @@ const UserCart = asynchandeler(async (req, res) => {
 const getusercart = asynchandeler(async (req, res) => {
   const { id } = req.user;
   try {
-    const cart = await Cart.findOne({ orderby: id }).populate(
-      "products.product"
-    );
-    res.json(cart);
+    const carts = await Cart.find({ UserId: id }).populate("color").populate("productId");
+    res.json(carts);
   } catch (error) {
     throw new Error(error);
   }
 });
-//delete cart
-const deletcart = asynchandeler(async (req, res) => {
+
+const deletAcart = asynchandeler(async (req, res) => {
   const { id } = req.user;
+  const { Cart_id } = req.params;
   try {
-    const user = await Cart.findOne({ id });
-    const cart = await Cart.findOneAndDelete({ orderby: id });
-    res.json(cart);
+    const carts = await Cart.deleteOne({UserId: id,_id:Cart_id});
+    res.json(carts);
   } catch (error) {
     throw new Error(error);
   }
 });
+
+
+//delete cart
+const deleteProductFromPanier = async (req, res) => {
+  const {id } = req.user; // Utilisation de destructuring pour extraire _id de req.user
+
+  try {
+    const result = await Cart.deleteMany({ UserId: id }); // Assuming userId is the field that represents the user's _id in the Cart model
+
+    res.json(result);
+  } catch (error) {
+    console.error(error); // Utilisation de console.error pour afficher l'erreur dans la console
+    res.status(500).json({ message: "Une erreur s'est produite lors de la suppression du tout produit du panier." });
+  }
+};
+
+const updateCart = async (req, res) => {
+  const { id } = req.user;
+  const { Cart_id, newquantite } = req.params;
+
+  try {
+    // Recherche du panier à mettre à jour
+    const cart = await Cart.findOneAndUpdate(
+      { UserId: id, _id: Cart_id },
+      { $set: { quantite: newquantite } }, // Mettre à jour la quantité
+      { new: true } // Renvoie le panier mis à jour
+    );
+
+    // Vérifier si le panier est trouvé
+    if (!cart) {
+      return res.status(404).json({ message: "Panier non trouvé" });
+    }
+
+    // Renvoyer le panier mis à jour
+    res.json(cart);
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour du panier :", error);
+    res.status(500).json({ message: "Erreur lors de la mise à jour du panier" });
+  }
+};
+
+
+
+
 
 const applycoupon =asynchandeler( async (req, res) => {
   const { coupon } = req.body;
@@ -348,7 +393,45 @@ const applycoupon =asynchandeler( async (req, res) => {
   }
 }
 )
-const createOrder = async (req, res) => {
+const createorder= asynchandeler(async(req,res)=>{
+  const {Shippinginfo,IdPayment,orderItems,totalPrice,totalPriceAfterdiscount}=req.body;
+  const { id } = req.user;
+  try{
+    const order=await Order.create(
+      {
+          Shippinginfo,orderItems,totalPrice,totalPriceAfterdiscount,IdPayment,user:id
+      })
+       res.json({
+        order,
+        success:true
+      })
+    
+  }catch(error){
+    throw new Error(error)
+  }
+})
+
+
+const getOrder = asynchandeler(async(req,res)=>{
+  const { id } = req.user;
+try{
+const orders = await Order.find({user:id}).populate("user").populate("orderItems.product").populate("orderItems.color");
+res.json(orders)
+}catch(erreur){
+  throw new Error(erreur)
+}
+})
+
+const getAllOrder = asynchandeler(async(req,res)=>{
+
+try{
+const orders = await Order.find().populate("user").populate("orderItems.product").populate("orderItems.color");
+res.json(orders)
+}catch(erreur){
+  throw new Error(erreur)
+}
+})
+/* const createOrder = async (req, res) => {
   const { COD, couponApplied } = req.body;
   const { id } = req.user;
   try {
@@ -414,44 +497,158 @@ const getallOrder = asynchandeler(async(req,res)=>{
   }
 })
 
+
+
+ */
+
+
 const getorderbyuser = async (req, res) => {
   const { id } = req.params;
   validation(id)
   try {
-    const orderbyuser = await Order.findOne({ orderby: id })
-      .populate('products.product')
-      .populate('orderby')
-      .exec();
+    const orderbyuser = await Order.findOne({ user: id }).populate("user").populate("orderItems.product").populate("orderItems.color");
     res.json(orderbyuser);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Une erreur est survenue lors de la récupération des commandes.' });
   }
 };
-
-
 const updateOrderStatus = async (req, res) => {
-  const { status } = req.body;
   const { id } = req.params;
+  const { status } = req.body; // Assuming status is provided in the request body
 
   try {
-    validation(id);
-
-    const findOrder = await Order.findByIdAndUpdate(
-      id,
-      { orderStatus: status,
-        paimentIntent:{
-          status : status
-        } },
-      { new: true }
+    // Update the order status
+    const updatedOrder = await Order.findOneAndUpdate(
+      { _id: id }, // Assuming _id is the order ID
+      { $set: { orderStatus: req.body.status } }, // Assuming status is the field to be updated
+      { new: true } // To return the updated document
     );
 
-    res.json(findOrder);
+    if (!updatedOrder) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    res.json(updatedOrder);
   } catch (error) {
-    throw new Error(error)
-   
+    console.error(error);
+    res.status(500).json({ message: 'Une erreur est survenue lors de la mise à jour de la commande.' });
   }
 };
+
+
+
+const chekout = async (req, res) => {
+  try {
+    const url = "https://developers.flouci.com/api/generate_payment";
+    
+    const payload = {
+      app_token: process.env.key_api,
+      app_secret: process.env.secret_api,
+      amount: req.body.amount,
+      accept_card: true,
+      session_timeout_secs: 1200,
+      success_link: "http://localhost:3000/chekout",
+      fail_link: "http://localhost:3000/erreur",
+      developer_tracking_id: "42ecff84-5e68-46f1-9cdb-6c13663af616"
+    };
+
+    const response = await axios.post(url, payload);
+    res.json({ responseData: response.data, amount: payload.amount });
+
+    // Here, you can handle the Flouci API response
+  } catch (error) {
+    console.log(error);
+    // Handle the error here
+  }
+};
+const Verifypaiment = async (req, res) => {
+  const paymentid = req.params.id;
+  const {razorpayorderId ,rezorpayPaymentId}= req.body
+  try {
+    const response = await axios.get(`https://developers.flouci.com/api/verify_payment/${paymentid}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'apppublic': process.env.key_api,
+        'appsecret': process.env.secret_api
+      }
+    });
+    const data = response.data; 
+    
+    // Assuming the response data is what you want to send back
+    res.json({data,razorpayorderId,rezorpayPaymentId});
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+const getmonth = async (req, res) => {
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const d = new Date();
+  let endDate=""
+  d.setDate(1)
+
+  for (let i = 0; i < 12; i++) {
+      
+      d.setMonth(d.getMonth() - i);
+      endDate=monthNames[d.getMonth()]+""+d.getFullYear()
+  }
+      const data = await Order.aggregate([
+          {
+              $match: {
+                  createdAt: {
+                      $gte: new Date(endDate),
+                      $lte: new Date()
+                  }
+              }
+          },
+          {
+              $group: {
+                  _id: { month: "$month" },
+                  amount: { $sum: "$totalPriceAfterdiscount" },
+                  count: { $sum: 1 }
+              }
+          }
+      ]);
+
+  res.json(data)
+
+};
+
+ 
+  const getmonthcount = async (req, res) => {
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const d = new Date();
+    let endDate=""
+    d.setDate(1)
+  
+    for (let i = 0; i < 12; i++) {
+        
+        d.setMonth(d.getMonth() - i);
+        endDate=monthNames[d.getMonth()]+""+d.getFullYear()
+    }
+        const data = await Order.aggregate([
+            {
+                $match: {
+                    createdAt: {
+                        $gte: new Date(endDate),
+                        $lte: new Date()
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    amount: { $sum: "$totalPriceAfterdiscount" },
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+  
+    res.json(data)
+  
+  };
+  
 
 module.exports = {
   rsetpassword,
@@ -469,12 +666,22 @@ module.exports = {
   getwishlist,
   creeadres,
   UserCart,
-  deletcart,
   getusercart,
   applycoupon,
-  createOrder,
+  /* createOrder,
   getOrder,
-  updateOrderStatus,
   getallOrder,
+  , */
+  createorder,
+  deletAcart,
+  updateOrderStatus,
+  deleteProductFromPanier,
+  updateCart,
+  chekout,
+  Verifypaiment,
+  getOrder,
+  getmonth,
+  getmonthcount,
+  getAllOrder,
   getorderbyuser
 };

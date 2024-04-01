@@ -150,11 +150,11 @@ const rating = asynchandeler(async (req, res) => {
   const { id } = req.user;
   const { star, prodid,comment} = req.body;
   try {
-    const product = await Product.findById(prodid);
+    const product = await Product?.findById(prodid);
     let alreadyrated = product.rating.find(
       (userid) => userid.postedby.toString() === id.toString()
     );
-    if (alreadyrated) {
+    if (alreadyrated) { 
       const updatrrating = await Product.updateOne(
         {
           rating: { $elemMatch: alreadyrated },
@@ -174,7 +174,7 @@ const rating = asynchandeler(async (req, res) => {
             rating: {
               star: star,
               comment:comment,
-              postedby: id,
+              UserId: id,
             },
           },
         },
