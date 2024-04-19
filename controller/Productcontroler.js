@@ -145,51 +145,49 @@ const addtowihlis = asynchandeler(async (req, res) => {
     throw new Error(error);
   }
 });
+
+
 // rating produit
 const rating = asynchandeler(async (req, res) => {
   const { id } = req.user;
-  const { star, prodid,comment} = req.body;
+  const { star, prodid, comment } = req.body;
   try {
-    const product = await Product?.findById(prodid);
+    const product = await Product.findById(prodid);
     let alreadyrated = product.rating.find(
-      (userid) => userid.postedby.toString() === id.toString()
+      (userid) => userid.UserId.toString() === id.toString()
     );
     if (alreadyrated) { 
-      const updatrrating = await Product.updateOne(
+      await Product.updateOne(
         {
           rating: { $elemMatch: alreadyrated },
         },
         {
-          $set: { "rating.$.star": star,"rating.$.comment": comment },
-        },
-        {
-          new: true,
+          $set: { "rating.$.star": star, "rating.$.comment": comment },
         }
       );
     } else {
-      const rateproduct = await Product.findByIdAndUpdate(
+      await Product.findByIdAndUpdate(
         prodid,
         {
           $push: {
             rating: {
               star: star,
-              comment:comment,
+              comment: comment,
               UserId: id,
             },
           },
-        },
-        {
-          new: true,
         }
       );
     }
     
-    let totalrating = product.rating.length;
-    let ratingsum = product.rating
+    const updatedProduct = await Product.findById(prodid);
+    const totalrating = updatedProduct.rating.length;
+    const ratingsum = updatedProduct.rating
       .map((item) => item.star)
       .reduce((prev, curr) => prev + curr, 0);
-    let actualrating = Math.round(ratingsum / totalrating);
-    let finlrate = await Product.findByIdAndUpdate(
+    const actualrating = Math.round(ratingsum / totalrating);
+
+    const finlrate = await Product.findByIdAndUpdate(
       prodid,
       {
         totalrating: actualrating,
@@ -201,6 +199,7 @@ const rating = asynchandeler(async (req, res) => {
     throw new Error(error);
   }
 });
+
 const uploadImages = asynchandeler(async (req,res)=>{
 
   try{

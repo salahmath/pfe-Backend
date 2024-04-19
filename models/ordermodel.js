@@ -45,6 +45,10 @@ IdPayment:{
     required:true
   
 },
+type:{
+type:String,
+default:"payer à livraison"
+},
 orderItems:[{
   product:{
     type:mongoose.Schema.Types.ObjectId,

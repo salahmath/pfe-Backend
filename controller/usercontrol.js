@@ -283,43 +283,112 @@ const creeadres = asynchandeler(async (req, res) => {
 });
 
 const UserCart = asynchandeler(async (req, res) => {
-  const { productId ,color ,quantite,price } = req.body;
+  const { productId, color, quantite, price } = req.body;
   const { id } = req.user;
   validation(id);
   try {
-    let newcart = await new Cart({
-      UserId : id,
-      color ,
+    // Vérifier si l'article est déjà présent dans le panier de l'utilisateur
+    const existingCartItem = await Cart.findOne({ UserId: id, productId: productId });
+    if (existingCartItem) {
+      return res.status(400).json({ error: "Cet article est déjà présent dans votre panier." });
+    }
+
+    // Créer un nouvel article dans le panier
+    const newCart = await new Cart({
+      UserId: id,
+      color,
       quantite,
       price,
       productId
     }).save();
-    res.json(newcart);
+    const carts = await Cart.find({ UserId: id ,_id:newCart._id }).populate("productId").populate("color");
+    for (const cart of carts) {
+      const oldQuantite = 0;
+      const newQuantite = parseInt(newCart.quantite);
+      let resultat = oldQuantite;
+      if (newQuantite !== oldQuantite) {
+        const difference = Math.abs(newQuantite - oldQuantite);
+        resultat += newQuantite > oldQuantite ? difference : -difference;
+        const product = cart.productId;
+        product.quantite -= difference;
+        await product.save();
+      }
+      cart.quantite = resultat;
+      await cart.save();
+    }
+
+    res.json(carts);
   } catch (error) {
-    throw new Error(error);
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+
 // get  cart
 const getusercart = asynchandeler(async (req, res) => {
   const { id } = req.user;
   try {
-    const carts = await Cart.find({ UserId: id }).populate("color").populate("productId");
+    let carts = await Cart.find({ UserId: id }).populate("color").populate("productId");
+
+    // Filter out carts whose associated products don't exist
+    carts = await Promise.all(carts.map(async (cart) => {
+      const productExists = await Product.exists({ _id: cart.productId });
+      return productExists ? cart : null;
+    }));
+
+    // Remove null values from the carts array
+    carts = carts.filter(cart => cart !== null);
+
+    // Identify carts with unavailable products
+    const cartsWithUnavailableProducts = carts.filter(cart => cart === null);
+
+    // Delete carts with unavailable products
+    if (cartsWithUnavailableProducts.length > 0) {
+      await Cart.deleteMany({ _id: { $in: cartsWithUnavailableProducts.map(cart => cart._id) } });
+    }
+
     res.json(carts);
   } catch (error) {
-    throw new Error(error);
+    // Handle errors appropriately
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+
 
 const deletAcart = asynchandeler(async (req, res) => {
   const { id } = req.user;
   const { Cart_id } = req.params;
+  
   try {
-    const carts = await Cart.deleteOne({UserId: id,_id:Cart_id});
-    res.json(carts);
+    const cart = await Cart.findOne({ UserId: id, _id: Cart_id }).populate("productId");
+
+    const product = await Product.findById(cart.productId);
+    const oldQuantite = cart.quantite;
+    const newQuantite = parseInt(product.quantite);
+    const updatedQuantite = oldQuantite + newQuantite;
+
+    // Update the product's quantity
+    const updatedProduct = await Product.findByIdAndUpdate(
+      cart.productId,
+      { quantite: updatedQuantite },
+      { new: true }
+    );
+
+    // Delete the cart
+    await Cart.deleteOne({ UserId: id, _id: Cart_id });
+
+    res.json({ success: true, message: "Cart deleted successfully", updatedQuantite, updatedProduct });
   } catch (error) {
-    throw new Error(error);
+    // Handle errors appropriately
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+
 
 
 //delete cart
@@ -335,64 +404,134 @@ const deleteProductFromPanier = async (req, res) => {
     res.status(500).json({ message: "Une erreur s'est produite lors de la suppression du tout produit du panier." });
   }
 };
-
 const updateCart = async (req, res) => {
   const { id } = req.user;
-  const { Cart_id, newquantite } = req.params;
-
+  const { Cart_id,newquantite } = req.params;
   try {
-    // Recherche du panier à mettre à jour
-    const cart = await Cart.findOneAndUpdate(
-      { UserId: id, _id: Cart_id },
-      { $set: { quantite: newquantite } }, // Mettre à jour la quantité
-      { new: true } // Renvoie le panier mis à jour
-    );
-
-    // Vérifier si le panier est trouvé
+    const cart = await Cart.findOne({ UserId: id, _id: Cart_id }).populate("productId");
     if (!cart) {
       return res.status(404).json({ message: "Panier non trouvé" });
     }
-
-    // Renvoyer le panier mis à jour
-    res.json(cart);
+    const product = await Product.findById(cart.productId);
+    if (!product) {
+      return res.status(404).json({ message: "Produit non trouvé" });
+    }
+    const oldQuantite = cart.quantite;
+    const newQuantite = parseInt(newquantite);
+    let resultat = oldQuantite;
+    if (newQuantite !== oldQuantite) {
+      if (newQuantite > oldQuantite) {
+        const difference = newQuantite - oldQuantite;
+        resultat += difference;
+      } else {
+        const difference = oldQuantite - newQuantite;
+        resultat -= difference;
+      }
+      product.quantite -= (newQuantite - oldQuantite);
+      await product.save();
+    }
+    cart.quantite = resultat;
+    await cart.save();
+    res.json({ cart, product });
   } catch (error) {
     console.error("Erreur lors de la mise à jour du panier :", error);
     res.status(500).json({ message: "Erreur lors de la mise à jour du panier" });
+  }
+};
+const updatequantite2 = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const rder = await Order.findOne({ _id: id }).populate("user").populate("orderItems.product");
+    const orderItems = rder.orderItems;
+    await Promise.all(orderItems.map(async (item) => {
+      await Product.findOneAndUpdate(
+        { _id: item.product._id },
+        { $inc: { quantite: item.quantity } },
+        { new: true }
+      );
+      item.quantity = 0;
+    }));
+    await rder.save();
+    res.json(rder);
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour de la quantité de produits :", error);
+    res.status(500).json({ message: "Erreur lors de la mise à jour de la quantité de produits" });
   }
 };
 
 
 
 
+const getorderbyuser = async (req, res) => {
+  const { id } = req.params;
+  validation(id)
+  try {
+    const orderbyuser = await Order.find({ _id: id }).populate("user").populate("orderItems.product").populate("orderItems.color");
+    res.json(orderbyuser);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Une erreur est survenue lors de la récupération des commandes.' });
+  }
+};
 
-const applycoupon =asynchandeler( async (req, res) => {
+
+const applycoupon = async (req, res) => {
   const { coupon } = req.body;
   const { _id } = req.user;
   try {
     const ecoupon = await Coupon.findOne({ name: coupon });
-    if (ecoupon === null) {
+    if (!ecoupon) {
       throw new Error("This coupon is not valid");
     }
-    const auser = await user.findOne({ _id }); // Corrected to await User.findOne({ _id })
-    let { products, cartTotal } = await Cart.findOne({
-      orderby : user._id,
-    }).populate(
-      "products.product");
-    let totalAfterDiscount = (
-      cartTotal - (cartTotal * ecoupon.discount) / 100
-    ).toFixed(2);
-    await Cart.findOneAndUpdate(
-      {orderby: user._id}, 
-      { totalAfterDiscount },
-      { new: true } // Corrected to use { new: true }
+    const auser = await user.findOne({ _id });
+    if (!auser) {
+      throw new Error("User not found");
+    }
+    const cart = await Cart.findOne({ UserId: auser._id });
+    if (!cart) {
+      throw new Error("Cart not found for this user");
+    }
+    const totalCartPrice = parseFloat(cart.price);
+    const discountAmount = (totalCartPrice * ecoupon.discount)/100 ;
+    let totalCartPriceAfterDiscount = (totalCartPrice - discountAmount).toFixed(2);
+    const updatedCart = await Cart.findOneAndUpdate(
+      { UserId: auser._id },
+      { totalCartPrice: totalCartPriceAfterDiscount },
+      { new: true }
     );
-    res.json(totalAfterDiscount);
+
+    res.json(totalCartPriceAfterDiscount); // Renvoie le prix total du panier mis à jour
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error.message });
   }
-}
-)
+};
+
+
+const applycouponcart = async (req, res) => {
+  const { coupon , solde } = req.body;
+  const { _id } = req.user;
+  try {
+    const ecoupon = await Coupon.findOne({ _id: coupon });
+    if (!ecoupon) {
+      throw new Error("This coupon is not valid");
+    }
+    const auser = await user.findOne({ _id });
+    if (!auser) {
+      throw new Error("User not found");
+    }
+    const totalCartPrice = solde;
+    const discountAmount = (totalCartPrice * ecoupon.discount)/100 ;
+
+    await Coupon.deleteOne({ _id: coupon });
+
+    res.json(discountAmount); // Renvoie le prix total du panier mis à jour
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 const createorder= asynchandeler(async(req,res)=>{
   const {Shippinginfo,IdPayment,orderItems,totalPrice,totalPriceAfterdiscount}=req.body;
   const { id } = req.user;
@@ -423,7 +562,6 @@ res.json(orders)
 })
 
 const getAllOrder = asynchandeler(async(req,res)=>{
-
 try{
 const orders = await Order.find().populate("user").populate("orderItems.product").populate("orderItems.color");
 res.json(orders)
@@ -502,17 +640,6 @@ const getallOrder = asynchandeler(async(req,res)=>{
  */
 
 
-const getorderbyuser = async (req, res) => {
-  const { id } = req.params;
-  validation(id)
-  try {
-    const orderbyuser = await Order.findOne({ user: id }).populate("user").populate("orderItems.product").populate("orderItems.color");
-    res.json(orderbyuser);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Une erreur est survenue lors de la récupération des commandes.' });
-  }
-};
 const updateOrderStatus = async (req, res) => {
   const { id } = req.params;
   const { status } = req.body; // Assuming status is provided in the request body
@@ -520,9 +647,9 @@ const updateOrderStatus = async (req, res) => {
   try {
     // Update the order status
     const updatedOrder = await Order.findOneAndUpdate(
-      { _id: id }, // Assuming _id is the order ID
-      { $set: { orderStatus: req.body.status } }, // Assuming status is the field to be updated
-      { new: true } // To return the updated document
+      { _id: id }, 
+      { $set: { orderStatus: req.body.status } }, 
+      { new: true } 
     );
 
     if (!updatedOrder) {
@@ -555,8 +682,6 @@ const chekout = async (req, res) => {
 
     const response = await axios.post(url, payload);
     res.json({ responseData: response.data, amount: payload.amount });
-
-    // Here, you can handle the Flouci API response
   } catch (error) {
     console.log(error);
     // Handle the error here
@@ -575,13 +700,28 @@ const Verifypaiment = async (req, res) => {
     });
     const data = response.data; 
     
-    // Assuming the response data is what you want to send back
-    res.json({data,razorpayorderId,rezorpayPaymentId});
+    res.json({data,paymentid});
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+const updateOrder2 = async (req, res) => {
+  const { type, id } = req.body;
+  try {
+    const updatedOrder = await Order.findOneAndUpdate(
+      { IdPayment: id },
+      { $set: { type: type } },
+      { new: true }
+    );
+    res.json(updatedOrder);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Une erreur est survenue lors de la mise à jour de la commande.' });
+  }
+};
+
+
 const getmonth = async (req, res) => {
   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   const d = new Date();
@@ -678,10 +818,13 @@ module.exports = {
   deleteProductFromPanier,
   updateCart,
   chekout,
+  updateOrder2,
   Verifypaiment,
   getOrder,
   getmonth,
   getmonthcount,
   getAllOrder,
-  getorderbyuser
+  getorderbyuser,
+  applycouponcart,
+  updatequantite2
 };

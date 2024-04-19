@@ -51,10 +51,10 @@ var ProductSchema = new mongoose.Schema({
         UserId:{type:mongoose.Schema.Types.ObjectId,
             ref : "User" }
     }],
-    totalrating:{
-        type:String,
-        default : 0,
-    },
+    totalrating: {
+        type: Number,
+        default: 0
+      },
     fournisseur:
         {type:mongoose.Schema.Types.ObjectId,
             ref : "Fournisseur" 
@@ -64,7 +64,5 @@ var ProductSchema = new mongoose.Schema({
     timestamps : true,
 
 });
-
-
 
 module.exports = mongoose.model('Product', ProductSchema);

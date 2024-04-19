@@ -43,11 +43,9 @@ const unblockuser = asyncHandler(async (req, res) => {
       new: true,
     }
   );
-  res.json({
-    message:"utilisateur debloker"
-  })
+  res.json(find)
 }catch(error){
-throw new Error('impossible de blocker ce utilisateur ')
+throw new Error('impossible de deblocker ce utilisateur ')
 
 
   }
@@ -64,11 +62,9 @@ const blockuser = asyncHandler(async (req, res) => {
          new: false,
        }
      );
-     res.json({
-       message:"utilisateur bloker"
-     })
+     res.json(find)
    }catch(error){
-   throw new Error('impossible de deblocker ce utilisateur ')
+   throw new Error('impossible de blocker ce utilisateur ')
    
    
      }
