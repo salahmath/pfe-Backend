@@ -10,12 +10,10 @@ var blogSchema = new mongoose.Schema({
     description:{
         type:String,
         required:true,
-        
     },
     category:{
         type:String,
         required:true,
-        
     },
     numViews:{
         type:Number,
@@ -24,7 +22,6 @@ var blogSchema = new mongoose.Schema({
     isliked:{
         type:Boolean,
         default:false,
-        
     },
     isdisliked:{
         type:Boolean,

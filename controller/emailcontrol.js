@@ -14,10 +14,6 @@ let transporter = nodemailer.createTransport({
       pass: "vzyp enpy cdud ttty"
     },
   });
-  
-  // async..await is not allowed in global scope, must use a wrapper
-  
-    // send mail with defined transport object
    let info = await transporter.sendMail({
       from: '"hey 👻" <abc@example.com>', // sender address
       to: data.to, // list of receivers

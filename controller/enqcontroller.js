@@ -61,7 +61,6 @@ const addenq = async (req, res) => {
     res.status(500).json({ error: 'Erreur lors de la création de l\'enquête' }); // Réponse d'erreur
   }
 };
-
 const getenq = async (req, res) => {
   try {
     
@@ -85,7 +84,6 @@ const getenqbyuser = async (req, res) => {
     res.status(500).json({ error: 'Erreur lors de la récupération de l\'enquête' }); // Réponse d'erreur
   }
 };
-
 //get all caegory
 const getallenq = asynchandeler(async (req, res) => {
   try {

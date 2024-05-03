@@ -28,7 +28,6 @@ var ProductSchema = new mongoose.Schema({
     brand:{
     type : String,
     required:true
-    
     },
     quantite:{ type: Number,
         required:true,
@@ -38,11 +37,7 @@ var ProductSchema = new mongoose.Schema({
         type : Number,
         default:0
     },
-    images:[{
-        public_id:String,
-        url:String
-
-    }],
+    images:[],
     color:[],
     tags:{type : String},
     rating:[{
@@ -54,11 +49,7 @@ var ProductSchema = new mongoose.Schema({
     totalrating: {
         type: Number,
         default: 0
-      },
-    fournisseur:
-        {type:mongoose.Schema.Types.ObjectId,
-            ref : "Fournisseur" 
-    },
+      }
 },
 {
     timestamps : true,

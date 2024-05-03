@@ -44,7 +44,6 @@ var userSchema = new mongoose.Schema({
     wishlist: [{type: mongoose.Schema.Types.ObjectId  , ref:"Product"}],
     refrechToken:{
         type : String,
-        
     },
     passwordChangedAt : Date,
     passwordResetToken : String,

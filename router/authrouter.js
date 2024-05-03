@@ -19,6 +19,7 @@ const {
   applycoupon,
   deletAcart,
   updateCart,
+  getAllOrdersanspay,
   createorder,
   chekout,
   Verifypaiment,
@@ -30,8 +31,13 @@ const {
   updateOrderStatus,
   deleteProductFromPanier,
   applycouponcart,
+  getordersnum1,
   updatequantite2,
   updateOrder2,
+  getordersnum,
+  getTotalClientsAndOrders,
+  ckonnert,
+  check
 } = require("../controller/usercontrol");
 const {
   authMiddleware,
@@ -69,6 +75,11 @@ router.post("/creecart", authMiddleware, UserCart);
 router.get("/getusercart", authMiddleware, getusercart);
 router.get("/getmonth", authMiddleware, getmonth);
 router.get("/getmonthcount", authMiddleware, getmonthcount);
+router.get("/getsum", getordersnum);
+router.get("/getclientordered", getTotalClientsAndOrders);
+router.get("/getordersnum1", getordersnum1);
+
+
 router.post("/cart/applycouponcart", authMiddleware, applycouponcart);
 
 
@@ -93,6 +104,8 @@ router.post("/paymentsuccess", authMiddleware, chekout);
 router.post("/paymentverif/:id", authMiddleware, Verifypaiment);
 router.get("/getorder", authMiddleware, getOrder);
 router.get("/getallorder", authMiddleware, getAllOrder);
-
+router.get("/getAllOrdersanspay", authMiddleware, getAllOrdersanspay);
+router.put("/konnect", ckonnert);
+router.put("/check/:id", check);
 
 module.exports = router;

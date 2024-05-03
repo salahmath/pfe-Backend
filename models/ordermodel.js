@@ -40,15 +40,18 @@ CodePin:{
 }
 },
 
-IdPayment:{
+payment_ref:{
     type:String,
-    required:true
-  
+    default:"000000"
 },
 type:{
 type:String,
-default:"payer à livraison"
+default:"0"
 },
+method:{
+  type:String,
+  default:"non"
+  },
 orderItems:[{
   product:{
     type:mongoose.Schema.Types.ObjectId,

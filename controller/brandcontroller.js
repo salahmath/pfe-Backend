@@ -13,7 +13,7 @@ const addbrand = asynchandeler(async(req,res)=>{
         throw new Error(error)
     }
 })
-//update category 
+
 const updatebrand = asynchandeler(async(req,res)=>{
 
     try{

@@ -18,9 +18,7 @@ const updateBlog = asynchandeler(async (req, res) => {
   try {
     const update = await Blog.findByIdAndUpdate(
       id,
-
       req.body,
-
       { new: true }
     );
     res.json({
