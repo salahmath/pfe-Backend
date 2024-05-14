@@ -3,7 +3,7 @@ const bodyparser = require("body-parser");
 const { default: db } = require("./config/config");
 const app = express();
 const dotenv = require("dotenv").config();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 const auth = require("./router/authrouter");
 const product = require("./router/productrouter");
 const blog = require("./router/blogrout");
@@ -36,6 +36,10 @@ app.use("/api/blog", blog);
 app.use("/api/color",color);
 app.use(notfound);
 app.use(errorhandel);
+app.get('/', (req, res) => {
+  res.send('Hello World!')
+})
+
 app.listen(PORT, () => {
   console.log(`mon serveur reserve le port ${PORT}`);
 })
