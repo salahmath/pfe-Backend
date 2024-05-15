@@ -3,7 +3,6 @@ const bodyparser = require("body-parser");
 const { default: db } = require("./config/config");
 const app = express();
 const dotenv = require("dotenv").config();
-const PORT = process.env.PORT || 4000;
 const auth = require("./router/authrouter");
 const product = require("./router/productrouter");
 const blog = require("./router/blogrout");
@@ -36,6 +35,7 @@ app.use("/api/blog", blog);
 app.use("/api/color",color);
 app.use(notfound);
 app.use(errorhandel);
+const PORT = process.env.PORT || 4000; // Utilise le port 4000 si la variable d'environnement PORT n'est pas définie
 app.get('/', (req, res) => {
   res.send('Hello World!')
 })
