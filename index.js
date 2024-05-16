@@ -24,6 +24,7 @@ const corsConfig={
   Credential:true,
   methods:["GET","PUT","POST","DELETE"],
 }
+app.options("",cors(corsConfig))
 app.use(cors(corsConfig));
 app.use(morgan("dev"));
 app.use(cookieparser());
