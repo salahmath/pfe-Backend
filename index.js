@@ -18,7 +18,13 @@ db();
 const cookieparser = require("cookie-parser");
 const four = require("./router/fournisseurrouter");
 const cors = require('cors');
-app.use(cors());
+
+const corsConfig={
+  origin:"*",
+  Credential:true,
+  methods:["GET","PUT","POST","DELETE"],
+}
+app.use(cors(corsConfig));
 app.use(morgan("dev"));
 app.use(cookieparser());
 app.use(bodyparser.json());
@@ -36,9 +42,7 @@ app.use("/api/color",color);
 app.use(notfound);
 app.use(errorhandel);
 const PORT = process.env.PORT || 4000; // Utilise le port 4000 si la variable d'environnement PORT n'est pas définie
-app.get('/', (req, res) => {
-  res.send('Hello World!')
-})
+
 
 app.listen(PORT, () => {
   console.log(`mon serveur reserve le port ${PORT}`);
