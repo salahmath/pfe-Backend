@@ -44,7 +44,9 @@ app.use(notfound);
 app.use(errorhandel);
 const PORT = process.env.PORT || 4000; // Utilise le port 4000 si la variable d'environnement PORT n'est pas définie
 
-
+app.get("/", (req,res)=>{
+  res.send ("say")
+});
 app.listen(PORT, () => {
   console.log(`mon serveur reserve le port ${PORT}`);
 })
