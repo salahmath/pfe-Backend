@@ -31,7 +31,6 @@ var ProductSchema = new mongoose.Schema({
     },
     quantite:{ type: Number,
         required:true,
-        
 },
     solde:{
         type : Number,

@@ -3,18 +3,22 @@ const asynchandeler =require('express-async-handler');
 
 
 
-const creecoupon = asynchandeler(async(req,res)=>{
-try{
-const id = req.body;
-const cree = await Coupon.create(id);
-res.json(cree)
+const creecoupon = async (req, res) => {
+    try {
+        const { name, discount, expiry } = req.body;
+        
+        // Check if expiry date is earlier than the current date
+        if (new Date(expiry) < Date.now()) {
+            return res.status(400).json({ error: "Expiry date cannot be in the past." });
+        }
+        
+        const cree = await Coupon.create({ name, discount, expiry });
+        res.json(cree);
+    } catch (error) {
+        throw new Error(error);
+    }
+};
 
-}catch(error){
-throw new Error(error);
-
-}
-
-})
 const updatecoupon = asynchandeler(async(req,res)=>{
     try{
     const {id} = req.params;

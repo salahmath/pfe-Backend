@@ -120,6 +120,7 @@ const getauser = asynchandeler(async (req, res) => {
 const deleteauser = asynchandeler(async (req, res) => {
   const { id } = req.params;
   const delUser = await user.findByIdAndDelete(id);
+  const deleteorder = await Order.findOneAndDelete({user : id})
   validation(id);
 
   try {
@@ -524,7 +525,7 @@ const applycoupon = async (req, res) => {
       throw new Error("Cart not found for this user");
     }
     const totalCartPrice = parseFloat(cart.price);
-    const discountAmount = (totalCartPrice * ecoupon.discount) / 100;
+    const discountAmount = (totalCartPrice * ecoupon.discount);
     let totalCartPriceAfterDiscount = (totalCartPrice - discountAmount).toFixed(
       2
     );
@@ -545,20 +546,30 @@ const applycouponcart = async (req, res) => {
   const { coupon, solde } = req.body;
   const { _id } = req.user;
   try {
+    // Recherche du coupon dans la base de données
     const ecoupon = await Coupon.findOne({ _id: coupon });
     if (!ecoupon) {
       throw new Error("This coupon is not valid");
     }
+
+    // Recherche de l'utilisateur dans la base de données
     const auser = await user.findOne({ _id });
     if (!auser) {
       throw new Error("User not found");
     }
-    const totalCartPrice = solde;
-    const discountAmount = (totalCartPrice * ecoupon.discount) / 100;
 
+    // Calcul du montant de la réduction
+    const totalCartPrice = parseFloat(solde);
+    const discountAmount = totalCartPrice * (ecoupon.discount / 100);
+
+    // Calcul du prix total du panier après application de la réduction
+    const updatedTotalCartPrice = totalCartPrice - discountAmount;
+
+    // Suppression du coupon de la base de données
     await Coupon.deleteOne({ _id: coupon });
 
-    res.json(discountAmount); // Renvoie le prix total du panier mis à jour
+    // Renvoi du prix total du panier mis à jour
+    res.json({ updatedTotalCartPrice });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error.message });
@@ -916,7 +927,7 @@ const getAllOrdersanspay = async (req, res) => {
   try {
     const currentDate = new Date();
     const fortyEightHoursAgo = new Date(currentDate);
-    fortyEightHoursAgo.setHours(fortyEightHoursAgo.getHours() - 48);
+    fortyEightHoursAgo.setHours(fortyEightHoursAgo.getHours() - 24);
     const updatedOrders = await Order.updateMany(
       { type: { $ne: "1" }, createdAt: { $lt: fortyEightHoursAgo } },
       { $set: { orderStatus: "Annulé" } }
