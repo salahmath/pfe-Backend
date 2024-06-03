@@ -6,10 +6,12 @@ var userSchema = new mongoose.Schema({
     lastname:{
         type:String,
         required:true,
+        unique:false
     },
     Secondname:{
         type:String,
         required:true,
+        unique:false
     },
     email:{
         type:String,

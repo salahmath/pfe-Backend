@@ -15,16 +15,34 @@ const Coupon = require("../models/couponmodel");
 const { trusted } = require("mongoose");
 const uniqid = require("uniqid");
 const Order = require("../models/ordermodel");
+const Twilio = require("../models/verifier");
 //cree un utilisateur
+const textflow = require("textflow.js");
+const accountSid = 'ACc35bf6ecc5c0db5e1b4ed7b41f57b777';
+const authToken = '9e3371b7847771ec3e278e087c260ba4';
+const client = require('twilio')(accountSid, authToken);
 
 const Createuser = asynchandeler(async (req, res) => {
-  const email = req.body.email;
-  const finduser = await user.findOne({ email: email });
-  if (!finduser) {
-    const CreateUser = await user.create(req.body);
-    res.json(CreateUser);
-  } else {
-    throw new Error("utilisateur deja ajouter ");
+  try {
+    const { email, mobile,body } = req.body;
+
+    // Vérifie si l'utilisateur existe déjà avec cet e-mail
+    const findUser = await user.findOne({ email: email });
+    if (findUser) {
+      throw new Error("Utilisateur déjà ajouté.");
+    }
+
+    // Vérifie si le numéro de téléphone est disponible dans le tableau Twilio
+    const twilioEntry = await Twilio.findOne({ number: mobile , body:body }).exec();
+    if (!twilioEntry) {
+      throw new Error("Numéro de téléphone non disponible dans Twilio.");
+    }
+
+    // Si l'utilisateur n'existe pas et que le numéro de téléphone est disponible, créez l'utilisateur
+    const createdUser = await user.create(req.body);
+    res.json(createdUser);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 });
 
@@ -119,8 +137,10 @@ const getauser = asynchandeler(async (req, res) => {
 //effacer un utilisateur
 const deleteauser = asynchandeler(async (req, res) => {
   const { id } = req.params;
+  const User = await user.findById(id);
   const delUser = await user.findByIdAndDelete(id);
   const deleteorder = await Order.findOneAndDelete({user : id})
+  const deletTwilio = await Twilio.findOneAndDelete({number : User.mobile})
   validation(id);
 
   try {
@@ -996,6 +1016,47 @@ const getordersnum1 = async (req, res) => {
   }
 };
 
+//
+
+const send1 = async (req, res) => {
+  const { number, body } = req.body; // Utilisation de la déstructuration pour extraire les valeurs de req.body
+
+  try {
+    // Envoyer le message avec Twilio
+    const message = await client.messages.create({
+      body: body,
+      from: '+14235655932',
+      to: `+216${number}`,
+    });
+
+    console.log('SMS sent successfully. SID:', message.sid);
+
+    // Enregistrer le message dans la base de données
+    const twilioMessage = new Twilio({ number, body });
+    await twilioMessage.save();
+
+    // Renvoyer une réponse au front-end
+    res.status(200).json({ status: 'success', message: 'Message sent and saved successfully' });
+  } catch (error) {
+    console.error('Error sending message or saving to database:', error);
+    res.status(500).json({ status: 'error', message: 'Failed to send message or save to database', error: error.message });
+  }
+};
+
+// Define the verification function
+const verify1 = async () => {
+  // Send verification SMS
+  textflow.sendVerificationSMS("+21628896143", verificationOptions);
+
+  // Simulating user submitting the code
+  let result = await textflow.verifyCode("+11234567890", "USER_ENTERED_CODE");
+
+  if (result.valid) {
+    console.log("Verified!");
+  } else {
+    console.log("Verification failed.");
+  }
+}
 module.exports = {
   rsetpassword,
   getAllOrdersanspay,
@@ -1039,4 +1100,5 @@ module.exports = {
   getorderbyuser,
   applycouponcart,
   updatequantite2,
+  send1,verify1
 };

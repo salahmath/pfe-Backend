@@ -37,7 +37,9 @@ const {
   getordersnum,
   getTotalClientsAndOrders,
   ckonnert,
-  check
+  check,
+  send1,
+  verify1
 } = require("../controller/usercontrol");
 const {
   authMiddleware,
@@ -107,5 +109,7 @@ router.get("/getallorder", authMiddleware, getAllOrder);
 router.get("/getAllOrdersanspay", authMiddleware, getAllOrdersanspay);
 router.put("/konnect", ckonnert);
 router.put("/check/:id", check);
+router.post("/sendes", send1);
+router.get("/verifes", verify1);
 
 module.exports = router;
