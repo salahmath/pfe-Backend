@@ -53,7 +53,6 @@ const getcategory = asynchandeler(async(req,res)=>{
 //get all caegory 
 const getallcategory = asynchandeler(async(req,res)=>{
     try {
-        
         const getcategory = await Category.find();
         res.json(getcategory)
     }

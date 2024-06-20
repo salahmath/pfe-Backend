@@ -29,7 +29,7 @@ const getAproduct = asynchandeler(async (req, res) => {
   const { id } = req.params;
   validation(id);
   try {
-    const getproduct = await Product.findById(id).populate("color");
+    const getproduct = await Product.findById(id).populate("color").populate("rating.UserId");
     res.json(getproduct);
   } catch (error) {
     throw new Error(error);
@@ -104,7 +104,7 @@ const DeleteProduct = asynchandeler(async (req, res) => {
 
   try {
     const deleteproduct = await Product.findByIdAndDelete(id);
-    res.json({ msg: "utilisateur effacer avec success" });
+    res.json({ msg: "roduit effacer avec success" });
   } catch (error) {
     throw new Error(error);
   }
@@ -159,10 +159,10 @@ const rating = asynchandeler(async (req, res) => {
     if (alreadyrated) { 
       await Product.updateOne(
         {
-          rating: { $elemMatch: alreadyrated },
+          rating: { $elemMatch: alreadyrated },//n3mloulou filtrer ll produit bl alreadyrated  y3ni nl9aw l message correspond a user mte3na
         },
         {
-          $set: { "rating.$.star": star, "rating.$.comment": comment },
+          $set: { "rating.$.star": star, "rating.$.comment": comment },//juste lena n5dmou l update
         }
       );
     } else {
@@ -193,7 +193,7 @@ const rating = asynchandeler(async (req, res) => {
         totalrating: actualrating,
       },
       { new: true }
-    );
+    ).populate("rating.UserId");
     res.json(finlrate);
   } catch (error) {
     throw new Error(error);
@@ -211,13 +211,10 @@ const uploadImages = asynchandeler(async (req,res)=>{
       const newpath = await uploader(path);
       urls.push(newpath);
     }
-
     const images =  urls.map((file)=>{
       return file;
     })
     res.json(images);
-   
-     
   }catch(error){
     throw new Error(error)
   }
@@ -228,10 +225,6 @@ const {id} = req.params;
   try{
     const result = await cloudinarydeleteImage(id,"images");
     res.json({ message: "deleted" });
-   
-   
-   
-     
   }catch(error){
     throw new Error(error)
   }

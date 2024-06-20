@@ -15,17 +15,14 @@ const addbrand = asynchandeler(async(req,res)=>{
 })
 
 const updatebrand = asynchandeler(async(req,res)=>{
-
     try{
 const {id} =req.params;
 const update = await Brand.findByIdAndUpdate(id,(req.body),{new:true})
 res.json(update)
-
     }catch (error){
     throw new Error(error)
     }
 })
-//delete category 
 const deletebrand = asynchandeler(async(req,res)=>{
 
     try{

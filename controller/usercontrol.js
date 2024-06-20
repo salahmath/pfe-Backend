@@ -18,14 +18,13 @@ const Order = require("../models/ordermodel");
 const Twilio = require("../models/verifier");
 //cree un utilisateur
 const textflow = require("textflow.js");
-const accountSid = 'ACc35bf6ecc5c0db5e1b4ed7b41f57b777';
-const authToken = '9e3371b7847771ec3e278e087c260ba4';
+const accountSid = 'ACaef3bdd5f04b5bb76e8730942abeff5a';
+const authToken = '5e4618669e8ff70d093bfab62e35bc3a';
 const client = require('twilio')(accountSid, authToken);
 
 const Createuser = asynchandeler(async (req, res) => {
   try {
     const { email, mobile,body } = req.body;
-
     // Vérifie si l'utilisateur existe déjà avec cet e-mail
     const findUser = await user.findOne({ email: email });
     if (findUser) {
@@ -50,7 +49,7 @@ const Createuser = asynchandeler(async (req, res) => {
 const Getuser = asynchandeler(async (req, res) => {
   const { email, password } = req.body;
   const finduser = await user.findOne({ email });
-  if (finduser && (await finduser.isPasswordMatched(password))) {
+  if (finduser && (await finduser.isPasswordMatched(password))) {  // Actions à effectuer si l'utilisateur est trouvé et le mot de passe(crypter) est correct
     const refreshtoken = await Refreshtoken(finduser?._id);
     const updateuser = await user.findByIdAndUpdate(
       finduser.id,
@@ -63,7 +62,9 @@ const Getuser = asynchandeler(async (req, res) => {
     );
     res.cookie("refrechToken", refreshtoken, {
       httpOnly: true,
+      //Cette option empêche le cookie d'être accessible via JavaScript côté client (document.cookie). Cela aide à protéger le cookie contre les attaques XSS (cross-site scripting).
       maxAge: 72 * 60 * 60 * 1000,
+      //Cette option définit la durée de vie du cookie en millisecondes. Ici, 72 * 60 * 60 * 1000 équivaut à 72 heures (3 jours).
     });
     res.json({
       _id: finduser?._id,
@@ -130,10 +131,9 @@ const getauser = asynchandeler(async (req, res) => {
   try {
     res.json({ aUser });
   } catch {
-    throw new Error("Aucun utilisateur trouvé avec cet ID");
+    throw new Error("Aucun utilisateur trouvé");
   }
 });
-
 //effacer un utilisateur
 const deleteauser = asynchandeler(async (req, res) => {
   const { id } = req.params;
@@ -264,7 +264,7 @@ const forgotPassword = asynchandeler(async (req, res) => {
 const rsetpassword = asynchandeler(async (req, res) => {
   const { password } = req.body;
   const { token } = req.params;
-  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");//token hethi li 5dhinaha l lien 
   const auser = await user.findOne({
     passwordResetToken: hashedToken,
     passwordRessetExpires: { $gt: Date.now() },
@@ -286,7 +286,6 @@ const getwishlist = asynchandeler(async (req, res) => {
     throw new Error(error);
   }
 });
-
 //ajouter adress ou modifier
 const creeadres = asynchandeler(async (req, res) => {
   const { id } = req.user;
@@ -302,7 +301,7 @@ const creeadres = asynchandeler(async (req, res) => {
   }
 });
 
-const UserCart = asynchandeler(async (req, res) => {
+const UserCart = asynchandeler(async (req, res) => {//panierrrrrrrrr
   const { productId, color, quantite, price } = req.body;
   const { id } = req.user;
   validation(id);
@@ -442,7 +441,7 @@ const deleteProductFromPanier = async (req, res) => {
       });
   }
 };
-
+//fl assel kol roduit chy5ou cart w7dou
 const updateCart = async (req, res) => {
   const { id } = req.user;
   const { Cart_id, newquantite } = req.params;
@@ -481,6 +480,7 @@ const updateCart = async (req, res) => {
       .json({ message: "Erreur lors de la mise à jour du panier" });
   }
 };
+//annuler coandee bl useeffect "controle"
 const updatequantite2 = async (req, res) => {
   const { id } = req.params;
   try {
@@ -571,20 +571,16 @@ const applycouponcart = async (req, res) => {
     if (!ecoupon) {
       throw new Error("This coupon is not valid");
     }
-
     // Recherche de l'utilisateur dans la base de données
     const auser = await user.findOne({ _id });
     if (!auser) {
       throw new Error("User not found");
     }
-
     // Calcul du montant de la réduction
     const totalCartPrice = parseFloat(solde);
     const discountAmount = totalCartPrice * (ecoupon.discount / 100);
-
     // Calcul du prix total du panier après application de la réduction
     const updatedTotalCartPrice = totalCartPrice - discountAmount;
-
     // Suppression du coupon de la base de données
     await Coupon.deleteOne({ _id: coupon });
 
@@ -622,7 +618,7 @@ const createorder = asynchandeler(async (req, res) => {
     throw new Error(error);
   }
 });
-
+//lel user
 const getOrder = asynchandeler(async (req, res) => {
   const { id } = req.user;
   try {
@@ -718,6 +714,7 @@ const Verifypaiment = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+//hethi bch nbdlha ya cart ya konnect bl tye
 const updateOrder2 = async (req, res) => {
   const { type, id } = req.body;
   try {
@@ -756,7 +753,6 @@ const getmonth = async (req, res) => {
   const d = new Date();
   let endDate = "";
   d.setDate(1);
-
   for (let i = 0; i < 12; i++) {
     d.setMonth(d.getMonth() - i);
     endDate = monthNames[d.getMonth()] + "" + d.getFullYear();
@@ -943,6 +939,7 @@ const check = async (req, res) => {
     res.status(500).json({ error: "Une erreur s'est produite" });
   }
 };
+//controle  ll h 
 const getAllOrdersanspay = async (req, res) => {
   try {
     const currentDate = new Date();
@@ -1025,7 +1022,7 @@ const send1 = async (req, res) => {
     // Envoyer le message avec Twilio
     const message = await client.messages.create({
       body: body,
-      from: '+14235655932',
+      from: '+14174792021',
       to: `+216${number}`,
     });
 
@@ -1035,7 +1032,6 @@ const send1 = async (req, res) => {
     const twilioMessage = new Twilio({ number, body });
     await twilioMessage.save();
 
-    // Renvoyer une réponse au front-end
     res.status(200).json({ status: 'success', message: 'Message sent and saved successfully' });
   } catch (error) {
     console.error('Error sending message or saving to database:', error);

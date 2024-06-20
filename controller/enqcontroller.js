@@ -1,8 +1,6 @@
 const enq = require("../models/enqModel");
 
 const asynchandeler = require("express-async-handler");
-
-
 //update category
 const updateenq = asynchandeler(async (req, res) => {
   try {
@@ -65,7 +63,6 @@ const getenq = async (req, res) => {
   try {
     
     const { id } = req.params;
-    
     const getcategory = await enq.findById(id);
     res.json(getcategory);
   } catch (error) {
